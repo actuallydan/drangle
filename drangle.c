@@ -9,6 +9,9 @@
 #define META Mod4Mask   // Meta key (usually the "Windows" key)
 #define CTRL ControlMask
 #define LEFT_ARROW XK_Left
+#define KEY_D XK_d
+#define KEY_F XK_f
+#define KEY_G XK_g
 
 void move_window(Display *dpy, Window win, int x, int y, int width, int height) {
     XMoveResizeWindow(dpy, win, x, y, width, height);
@@ -35,22 +38,25 @@ Window get_active_window(Display *dpy) {
     return 0;
 }
 
-void get_screen_size(Display *dpy, int *width, int *height) {
+void get_screen_size(Display *dpy, int *width, int *height, int *taskbar_height) {
     Window root = DefaultRootWindow(dpy);
-    XRRScreenSize *sizes;
-    int num_sizes;
-    XRRScreenConfiguration *conf = XRRGetScreenInfo(dpy, root);
-    Rotation current_rotation;
+    XRRScreenResources *resources = XRRGetScreenResources(dpy, root);
+    if (resources) {
+        XRRCrtcInfo *crtc_info = XRRGetCrtcInfo(dpy, resources, resources->crtcs[0]);
 
-    sizes = XRRConfigSizes(conf, &num_sizes);
-    if (sizes) {
-        // Get the width and height of the primary screen
-        *width = DisplayWidth(dpy, DefaultScreen(dpy));
-        *height = DisplayHeight(dpy, DefaultScreen(dpy));
+        if (crtc_info) {
+            *width = crtc_info->width; // Physical width
+            *height = crtc_info->height; // Physical height
+            XRRFreeCrtcInfo(crtc_info);
+        }
 
-        fprintf(stdout, "width: %i height: %i\n", *width, *height);
+        // Get the height of the taskbar (this is a rough estimate)
+        *taskbar_height = (*height - crtc_info->height) / crtc_info->height * *height;
+
+        fprintf(stdout, "taskbarheight: %i height: %i width: %i\n", *taskbar_height, *height, *width);
+        
+        XRRFreeScreenResources(resources);
     }
-    XRRFreeScreenConfigInfo(conf);
 }
 
 int main() {
@@ -63,24 +69,39 @@ int main() {
     Window root = DefaultRootWindow(dpy);
     XEvent ev;
 
-    // Release any previous key grabs for the same key combination
-    XUngrabKey(dpy, XKeysymToKeycode(dpy, LEFT_ARROW), CTRL | META, root);
+    // Release any previous key grabs for the same key combinations
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_D), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_F), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_G), CTRL | META, root);
 
-    // Grab the key combination
-    XGrabKey(dpy, XKeysymToKeycode(dpy, LEFT_ARROW), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    // Grab the key combinations
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_D), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_F), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_G), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
 
-    int screen_width, screen_height;
-    get_screen_size(dpy, &screen_width, &screen_height);
+    int screen_width, screen_height, taskbar_height;
 
     while (1) {
         XNextEvent(dpy, &ev);
         if (ev.type == KeyPress) {
-            if ((ev.xkey.state & CTRL) && (ev.xkey.state & META) && ev.xkey.keycode == XKeysymToKeycode(dpy, LEFT_ARROW)) {
-                Window active_win = get_active_window(dpy);
-                if (active_win) {
-                    // Ensure the window is resized to the left-most 1/3 of the screen and full height
-                    int third_width = screen_width / 3;
-                    move_window(dpy, active_win, 0, 0, third_width, screen_height); // Full height
+            get_screen_size(dpy, &screen_width, &screen_height, &taskbar_height);
+            Window active_win = get_active_window(dpy);
+            if (active_win) {
+                if ((ev.xkey.state & CTRL) && (ev.xkey.state & META)) {
+                    int adjusted_height = screen_height -  80; // Adjust height for taskbar
+                    if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_D)) {
+                        // Move to the left third
+                        int third_width = screen_width / 3;
+                        move_window(dpy, active_win, 0, 0, third_width, adjusted_height); // Full height minus taskbar
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_F)) {
+                        // Move to the middle third
+                        int third_width = screen_width / 3;
+                        move_window(dpy, active_win, third_width, 0, third_width, adjusted_height); // Full height minus taskbar
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_G)) {
+                        // Move to the right third
+                        int third_width = screen_width / 3;
+                        move_window(dpy, active_win, third_width * 2, 0, third_width, adjusted_height); // Full height minus taskbar
+                    }
                 }
             }
         }
