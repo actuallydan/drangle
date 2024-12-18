@@ -9,9 +9,14 @@
 #define META Mod4Mask   // Meta key (usually the "Windows" key)
 #define CTRL ControlMask
 #define LEFT_ARROW XK_Left
+#define RIGHT_ARROW XK_Right
 #define KEY_D XK_d
 #define KEY_F XK_f
 #define KEY_G XK_g
+#define KEY_U XK_u
+#define KEY_I XK_i
+#define KEY_O XK_o
+#define KEY_P XK_p
 
 void move_window(Display *dpy, Window win, int x, int y, int width, int height) {
     XMoveResizeWindow(dpy, win, x, y, width, height);
@@ -73,11 +78,23 @@ int main() {
     XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_D), CTRL | META, root);
     XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_F), CTRL | META, root);
     XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_G), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, LEFT_ARROW), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, RIGHT_ARROW), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_U), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_I), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_O), CTRL | META, root);
+    XUngrabKey(dpy, XKeysymToKeycode(dpy, KEY_P), CTRL | META, root);
 
     // Grab the key combinations
     XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_D), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
     XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_F), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
     XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_G), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, LEFT_ARROW), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, RIGHT_ARROW), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_U), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_I), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_O), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_P), CTRL | META, root, True, GrabModeAsync, GrabModeAsync);
 
     int screen_width, screen_height, taskbar_height;
 
@@ -101,6 +118,24 @@ int main() {
                         // Move to the right third
                         int third_width = screen_width / 3;
                         move_window(dpy, active_win, third_width * 2, 0, third_width, adjusted_height); // Full height minus taskbar
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, LEFT_ARROW)) {
+                        int half_width = screen_width / 2;
+                        move_window(dpy, active_win, 0, 0, half_width, adjusted_height);
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, RIGHT_ARROW)) {
+                        int half_width = screen_width / 2;
+                        move_window(dpy, active_win, half_width, 0, half_width, adjusted_height);
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_U)) {
+                        int quarter_width = screen_width / 4;
+                        move_window(dpy, active_win, 0, 0, quarter_width, adjusted_height);
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_I)) {
+                        int quarter_width = screen_width / 4;
+                        move_window(dpy, active_win, quarter_width, 0, quarter_width, adjusted_height);
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_O)) {
+                        int quarter_width = screen_width / 4;
+                        move_window(dpy, active_win, quarter_width * 2, 0, quarter_width, adjusted_height);
+                    } else if (ev.xkey.keycode == XKeysymToKeycode(dpy, KEY_P)) {
+                        int quarter_width = screen_width / 4;
+                        move_window(dpy, active_win, quarter_width * 3, 0, quarter_width, adjusted_height);
                     }
                 }
             }
